@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 
 import br.ce.wcaquino.rest.core.BaseTest;
+import br.ce.wcaquino.rest.utils.DataUtils;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -20,6 +21,7 @@ public class BarrigaTest extends BaseTest {
 	
 	private static String CONTA_NAME = "Conta " + System.nanoTime();
 	private static String CONTA_ID;
+	private static String MOV_ID;
 	
 	@Before
 	public void login() {
@@ -74,7 +76,7 @@ public class BarrigaTest extends BaseTest {
 		.then()
 		.log().all()
 			.statusCode(200)
-			.body("nome", is("conta alterada"))
+			.body("nome", is(CONTA_NAME+" alterada"))
 	;
   }
 	
@@ -96,7 +98,7 @@ public class BarrigaTest extends BaseTest {
 	public void t05_deveInserirMovimentacaoSucesso() {
 		Movimentacao mov = getMovimentacaoValida();
 		
-		given()
+		MOV_ID = given()
 			.header("Authorization", "JWT " + TOKEN)
 			.body(mov)
 		.when()
@@ -104,6 +106,7 @@ public class BarrigaTest extends BaseTest {
 		.then()
 		.log().all()
 			.statusCode(201)
+			.extract().path("id")
 	;
   }
 	
@@ -128,12 +131,12 @@ public class BarrigaTest extends BaseTest {
 					"Conta é obrigatório"
 					))
 		;
-	}
+	} 
 	
 	@Test
 	public void t07_naoDeveInserirMovimentacaoComDataFutura() {
 		Movimentacao mov = getMovimentacaoValida();
-		mov.setData_transacao("20/05/2033");
+		mov.setData_transacao(DataUtils.getDataDiferencaDias(2));
 		
 		given()
 			.header("Authorization", "JWT " + TOKEN)
@@ -153,8 +156,9 @@ public class BarrigaTest extends BaseTest {
 		
 		given()
 			.header("Authorization", "JWT " + TOKEN)
+			.pathParam("id", CONTA_ID)
 		.when()
-			.delete("/contas/1571019")
+			.delete("/contas/{id}")
 		.then()
 		.log().all()
 			.statusCode(500)
@@ -170,7 +174,7 @@ public class BarrigaTest extends BaseTest {
 			.get("/saldo")
 		.then()
 			.statusCode(200)
-			.body("find{it.conta_id == 1571019}.saldo", is("100.00"))
+			.body("find{it.conta_id == "+CONTA_ID+"}.saldo", is("100.00"))
 	;
   }
 	
@@ -178,8 +182,9 @@ public class BarrigaTest extends BaseTest {
 	public void t10_deveRemoverMovimentacao() {
 		given()
 			.header("Authorization", "JWT " + TOKEN)
+			.pathParam("id", MOV_ID)
 		.when()
-			.delete("/transacoes/1468739")
+			.delete("/transacoes/{id}")
 		.then()
 		.log().all()
 			.statusCode(204)
@@ -193,8 +198,8 @@ public class BarrigaTest extends BaseTest {
 		mov.setDescricao("Descricao da movimentacao");
 		mov.setEnvolvido("Envolvido na mov");
 		mov.setTipo("REC");
-		mov.setData_transacao("01/01/2000");
-		mov.setData_pagamento("01/01/2010");
+		mov.setData_transacao(DataUtils.getDataDiferencaDias(-1));
+		mov.setData_pagamento(DataUtils.getDataDiferencaDias(5));
 		mov.setValor(100f);
 		mov.setStatus(true);
 		return mov;

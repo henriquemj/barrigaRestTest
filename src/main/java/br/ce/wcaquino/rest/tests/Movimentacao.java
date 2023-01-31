@@ -10,7 +10,7 @@ public class Movimentacao {
 	private String data_pagamento;
 	private Float valor;
 	private Boolean status;
-	private Integer conta_id;
+	private String conta_id;
 	private Integer usuario_id;
 	
 	
@@ -62,10 +62,10 @@ public class Movimentacao {
 	public void setStatus(Boolean status) {
 		this.status = status;
 	}
-	public Integer getConta_id() {
+	public String getConta_id() {
 		return conta_id;
 	}
-	public void setConta_id(Integer conta_id) {
+	public void setConta_id(String conta_id) {
 		this.conta_id = conta_id;
 	}
 	public Integer getUsuario_id() {

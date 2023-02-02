@@ -3,10 +3,13 @@ package br.ce.wcaquino.rest.tests;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 
 import br.ce.wcaquino.rest.core.BaseTest;
 import br.ce.wcaquino.rest.utils.DataUtils;
+import io.restassured.RestAssured;
+import io.restassured.specification.FilterableRequestSpecification;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -17,19 +20,18 @@ import java.util.Map;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BarrigaTest extends BaseTest {
 	
-	private String TOKEN;
 	
 	private static String CONTA_NAME = "Conta " + System.nanoTime();
 	private static String CONTA_ID;
 	private static String MOV_ID;
 	
-	@Before
-	public void login() {
+	@BeforeClass
+	public static void login() {
 		Map<String, String> login = new HashMap<>();
 		login.put("email", "teste2023@teste.com.br");
 		login.put("senha", "123456");
 		
-		TOKEN = given()
+		String TOKEN = given()
 				.body(login)
 		.when()
 			.post("/signin")
@@ -37,16 +39,8 @@ public class BarrigaTest extends BaseTest {
 			.statusCode(200)
 			.extract().path("token");
 		
-	}
-	
-	@Test
-	public void t01_naoDeveAcessarAPISemToken() {
-		given()
-		.when()
-			.get("/contas")
-		.then()
-			.statusCode(401)
-		;
+		RestAssured.requestSpecification.header("Authorization", "JWT " + TOKEN);
+		
 	}
 	
 	// Email: teste2023@teste.com.br
@@ -55,7 +49,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t02_deveIncluirContaComSucesso() {
 		CONTA_ID = given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body("{ \"nome\": \""+CONTA_NAME+"\"}")
 		.when()
 			.post("/contas")
@@ -68,7 +61,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t03_deveAlterarContaComSucesso() {
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body("{ \"nome\": \""+CONTA_NAME+" alterada\" }")
 			.pathParam("id", CONTA_ID)
 		.when()
@@ -83,7 +75,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t04_naoDeveInserirContaMesmoNome() {
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body("{ \"nome\": \""+CONTA_NAME+" alterada\" }")
 		.when()
 			.post("/contas")
@@ -99,7 +90,6 @@ public class BarrigaTest extends BaseTest {
 		Movimentacao mov = getMovimentacaoValida();
 		
 		MOV_ID = given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body(mov)
 		.when()
 			.post("/transacoes")
@@ -113,7 +103,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t06_deveValidarCamposObrigatoriosMovimentacao() {
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body("{}")
 		.when()
 			.post("/transacoes")
@@ -139,7 +128,6 @@ public class BarrigaTest extends BaseTest {
 		mov.setData_transacao(DataUtils.getDataDiferencaDias(2));
 		
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.body(mov)
 		.when()
 			.post("/transacoes")
@@ -155,7 +143,6 @@ public class BarrigaTest extends BaseTest {
 	public void t08_naoDeveRemoverContaComMovimentacao() {
 		
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.pathParam("id", CONTA_ID)
 		.when()
 			.delete("/contas/{id}")
@@ -169,7 +156,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t09_deveCalcularSaldoContas() {
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 		.when()
 			.get("/saldo")
 		.then()
@@ -181,7 +167,6 @@ public class BarrigaTest extends BaseTest {
 	@Test
 	public void t10_deveRemoverMovimentacao() {
 		given()
-			.header("Authorization", "JWT " + TOKEN)
 			.pathParam("id", MOV_ID)
 		.when()
 			.delete("/transacoes/{id}")
@@ -190,6 +175,19 @@ public class BarrigaTest extends BaseTest {
 			.statusCode(204)
 		;
   }
+	
+	@Test
+	public void t11_naoDeveAcessarAPISemToken() {
+		FilterableRequestSpecification req = (FilterableRequestSpecification) RestAssured.requestSpecification;
+		req.removeHeader("Authorization");
+		
+		given()
+		.when()
+			.get("/contas")
+		.then()
+			.statusCode(401)
+		;
+	}
 	
 	private Movimentacao getMovimentacaoValida() {
 		Movimentacao mov = new Movimentacao();

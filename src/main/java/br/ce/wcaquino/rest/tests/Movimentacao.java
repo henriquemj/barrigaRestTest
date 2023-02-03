@@ -12,6 +12,7 @@ public class Movimentacao {
 	private Boolean status;
 	private String conta_id;
 	private Integer usuario_id;
+	private Integer conta_id2;
 	
 	
 	public Integer getId() {
@@ -73,6 +74,13 @@ public class Movimentacao {
 	}
 	public void setUsuario_id(Integer usuario_id) {
 		this.usuario_id = usuario_id;
+	}
+	
+	public Integer getConta_id2() {
+		return conta_id2;
+	}
+	public void setConta_id2(Integer conta_id2) {
+		this.conta_id2 = conta_id2;
 	}
 
 }
